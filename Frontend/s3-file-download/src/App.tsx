@@ -3,6 +3,7 @@ import axios, { CancelTokenSource } from "axios";
 import fileDownload from "js-file-download";
 import downloadService from "./services/DownloadService";
 import "./App.css";
+import Draggable from "react-draggable";
 
 function App() {
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
@@ -47,12 +48,17 @@ function App() {
           Download File
         </button>
         {downloadProgress > 0 && (
-          <div className="download-container">
-            Download Progress: {downloadProgress.toFixed(2)}%<progress value={downloadProgress} max="100"></progress>{" "}
-            <button className="cancel-icon" onClick={handleCancel}>
-              Cancel Download
-            </button>
-          </div>
+          <Draggable>
+            <div className="download-container">
+              <div>
+                Download Progress: {downloadProgress.toFixed(2)}%
+                <progress value={downloadProgress} max="100" className="progress-bar"></progress>
+              </div>
+              <button className="cancel-btn" onClick={handleCancel}>
+                Cancel Download
+              </button>
+            </div>
+          </Draggable>
         )}
         {error && <div>Error: {error}</div>}
       </header>
