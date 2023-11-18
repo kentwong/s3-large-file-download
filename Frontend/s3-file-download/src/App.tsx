@@ -1,30 +1,39 @@
+// Import necessary libraries and components
 import React, { useRef, useState } from "react";
-import axios, { CancelTokenSource } from "axios";
+import axios from "axios";
 import fileDownload from "js-file-download";
 import downloadService from "./services/DownloadService";
 import "./App.css";
 import Draggable from "react-draggable";
 
+// Define the App component
 function App() {
+  // useState is a Hook that lets you add React state to function components
+  // Here we're creating state variables for downloadProgress and error
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  // cancelTokenSourceRef is a ref that holds the CancelTokenSource.
-  // When the cancel button is clicked, handleCancel checks if
-  // cancelTokenSourceRef.current is not null, and if it's not, it calls cancel on it.
-  const cancelTokenSourceRef = useRef<CancelTokenSource | null>(null);
+  // useRef returns a mutable ref object whose .current property is initialized to the passed argument (null).
+  // The returned object will persist for the full lifetime of the component.
+  // Here we're creating a ref for the AbortController
+  const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Define the handleDownload function
   const handleDownload = () => {
-    const [downloadPromise, cancelTokenSource] = downloadService("http://localhost:3001/download", setDownloadProgress);
-    cancelTokenSourceRef.current = cancelTokenSource;
+    // downloadService returns a Promise for the download and an AbortController to cancel the download
+    const [downloadPromise, abortController] = downloadService("http://localhost:3001/download", setDownloadProgress);
+    // Store the AbortController in a ref so it can be accessed later
+    abortControllerRef.current = abortController;
 
-    // The second argument to downloadService is a callback function that updates the download progress state.
+    // When the download Promise resolves, download the file and reset the progress
+    // If the Promise is rejected, check if it was cancelled or if an error occurred
     downloadPromise
       .then((response) => {
         fileDownload(response.data, "sample.txt");
         setDownloadProgress(0);
       })
       .catch((error) => {
+        // axios.isCancel checks if the error was caused by a cancelled request
         if (axios.isCancel(error)) {
           console.log("Download cancelled");
         } else {
@@ -33,13 +42,16 @@ function App() {
       });
   };
 
+  // Define the handleCancel function
   const handleCancel = () => {
-    if (cancelTokenSourceRef.current) {
-      cancelTokenSourceRef.current.cancel("Download cancelled by the user");
+    // If the AbortController exists, call abort to cancel the download
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
       setDownloadProgress(0);
     }
   };
 
+  // Render the App component
   return (
     <div className="App">
       <header className="App-header">
@@ -48,6 +60,7 @@ function App() {
           Download File
         </button>
         {downloadProgress > 0 && (
+          // Use the Draggable component to make the download container draggable
           <Draggable>
             <div className="download-container">
               <div>
@@ -66,4 +79,5 @@ function App() {
   );
 }
 
+// Export the App component as the default export
 export default App;

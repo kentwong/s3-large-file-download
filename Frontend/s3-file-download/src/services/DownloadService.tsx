@@ -1,27 +1,33 @@
-import axios, { AxiosResponse, AxiosError, CancelTokenSource } from "axios";
+// Import necessary libraries and types
+import axios, { AxiosResponse } from "axios";
 
+// Define a type for the progress callback function
 type ProgressCallback = (progress: number) => void;
 
-// The shorthand method for a GET request with axios is axios.get(url, config).
-// However, the shorthand method does not support the onDownloadProgress option.
-// This option is only available in the full axios(config) method.
-
+// Define the downloadService function
 const downloadService = (
   url: string,
   onProgress: ProgressCallback
-): [Promise<AxiosResponse<Blob>>, CancelTokenSource] => {
+): [Promise<AxiosResponse<Blob>>, AbortController] => {
+  // Create a new AbortController
+  const controller = new AbortController();
+  // Create a new CancelTokenSource from axios
   const cancelTokenSource = axios.CancelToken.source();
 
-  // In this code, downloadService is a function that takes a URL and
-  // a callback function for handling download progress.
-  // It returns a Promise that resolves with the response from the axios call.
-  // The ProgressCallback type is a function that takes a number
-  // (the download progress as a percentage) and doesn't return anything.
+  // Add an event listener to the AbortController's signal
+  // When the 'abort' event is triggered, cancel the axios request
+  controller.signal.addEventListener("abort", () => {
+    cancelTokenSource.cancel();
+  });
+
+  // Create a promise for the axios request
   const downloadPromise = axios({
     method: "get",
     url: url,
     responseType: "blob",
     cancelToken: cancelTokenSource.token,
+    // Add a progress event handler to the axios request
+    // When the 'progress' event is triggered, calculate the progress and call the onProgress callback
     onDownloadProgress: (progressEvent) => {
       if (progressEvent.total !== undefined && progressEvent.total !== 0) {
         const progress = (progressEvent.loaded * 100) / progressEvent.total;
@@ -30,7 +36,9 @@ const downloadService = (
     },
   });
 
-  return [downloadPromise, cancelTokenSource];
+  // Return the axios promise and the AbortController
+  return [downloadPromise, controller];
 };
 
+// Export the downloadService function as the default export
 export default downloadService;
