@@ -6,28 +6,22 @@ import downloadService from "./services/DownloadService";
 import "./App.css";
 import Draggable from "react-draggable";
 
-// Define the App component
+// The AbortController needs to persist across re-renders of your component. If you declare it inside your App function, a new AbortController will be created every time your component re-renders, which means you won't be able to cancel a download that started before the last re-render.
+// By declaring abortController outside of the App function, you ensure that the same AbortController is used across all re-renders.
+// If you want to keep the AbortController inside your component, you can use the useRef hook to persist the AbortController across re-renders:
 function App() {
   // useState is a Hook that lets you add React state to function components
   // Here we're creating state variables for downloadProgress and error
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  // useRef returns a mutable ref object whose .current property is initialized to the passed argument (null).
-  // The returned object will persist for the full lifetime of the component.
-  // Here we're creating a ref for the AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
-
   // Define the handleDownload function
   const handleDownload = () => {
-    // downloadService returns a Promise for the download and an AbortController to cancel the download
-    const [downloadPromise, abortController] = downloadService("http://localhost:3001/download", setDownloadProgress);
-    // Store the AbortController in a ref so it can be accessed later
-    abortControllerRef.current = abortController;
-
     // When the download Promise resolves, download the file and reset the progress
     // If the Promise is rejected, check if it was cancelled or if an error occurred
-    downloadPromise
+    abortControllerRef.current = new AbortController();
+    downloadService("http://localhost:3001/download", setDownloadProgress, abortControllerRef.current?.signal)
       .then((response) => {
         fileDownload(response.data, "sample.txt");
         setDownloadProgress(0);

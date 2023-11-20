@@ -1,43 +1,62 @@
+// Import necessary libraries and types
 import axios from "axios";
-import MockAdapter from "axios-mock-adapter";
 import downloadService from "./DownloadService";
 
-// This sets the mock adapter on the default instance
-var mock = new MockAdapter(axios);
+// Define a type for the progress callback function
+type ProgressCallback = (progress: number) => void;
+
+// Mock the axios library
+jest.mock("axios");
 
 describe("downloadService", () => {
-  beforeEach(() => {
-    // Reset the mock before each test
-    mock.reset();
+  const url = "https://example.com/file";
+  const onProgress: ProgressCallback = jest.fn();
+  const abortSignal = new AbortController().signal;
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should download a file and report progress", async () => {
-    // Arrange
-    const url = "http://localhost:3001/download";
-    const mockBlob = new Blob(["test"], { type: "text/plain" });
-    const progressCallback = jest.fn();
-    mock.onGet(url).reply(200, mockBlob, { "Content-Length": "4" });
+  it("should download the file successfully", async () => {
+    // Mock the axios response
+    const response = {
+      data: new Blob(),
+    };
+    (axios.get as jest.Mock).mockResolvedValue(response);
 
-    // Act
-    const [downloadPromise, controller] = downloadService(url, progressCallback);
+    // Call the downloadService function
+    const result = await downloadService(url, onProgress, abortSignal);
 
-    // Assert
-    await expect(downloadPromise).resolves.toEqual(expect.objectContaining({ data: mockBlob }));
-    expect(progressCallback).toHaveBeenCalledWith(100);
+    // Verify the axios.get function is called with the correct arguments
+    expect(axios.get).toHaveBeenCalledWith(url, {
+      responseType: "blob",
+      onDownloadProgress: expect.any(Function),
+      cancelToken: expect.any(Object),
+    });
+
+    // Verify the onProgress callback is called with the correct progress value
+    expect(onProgress).toHaveBeenCalledWith(100);
+
+    // Verify the result is the expected response
+    expect(result).toEqual(response);
   });
 
-  it("should abort the download when the abort signal is triggered", async () => {
-    // Arrange
-    const url = "http://localhost:3001/download";
-    const progressCallback = jest.fn();
-    mock.onGet(url).reply(() => new Promise((resolve) => setTimeout(() => resolve([200, ""]), 5000)));
+  it("should handle download errors", async () => {
+    // Mock the axios error
+    const error = new Error("Download failed");
+    (axios.get as jest.Mock).mockRejectedValue(error);
 
-    // Act
-    const [downloadPromise, controller] = downloadService(url, progressCallback);
-    controller.abort();
+    // Call the downloadService function
+    await expect(downloadService(url, onProgress, abortSignal)).rejects.toThrow(error);
 
-    // Assert
-    await expect(downloadPromise).rejects.toThrow("Request aborted");
-    expect(progressCallback).not.toHaveBeenCalled();
+    // Verify the axios.get function is called with the correct arguments
+    expect(axios.get).toHaveBeenCalledWith(url, {
+      responseType: "blob",
+      onDownloadProgress: expect.any(Function),
+      cancelToken: expect.any(Object),
+    });
+
+    // Verify the onProgress callback is called with the correct progress value
+    expect(onProgress).toHaveBeenCalledWith(0);
   });
 });
