@@ -1,10 +1,11 @@
 // Import necessary libraries and components
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import fileDownload from "js-file-download";
 import downloadService from "./services/DownloadService";
 import "./App.css";
 import Draggable from "react-draggable";
+import TimePicker from "./TimePicker";
 
 // The AbortController needs to persist across re-renders of your component. If you declare it inside your App function, a new AbortController will be created every time your component re-renders, which means you won't be able to cancel a download that started before the last re-render.
 // By declaring abortController outside of the App function, you ensure that the same AbortController is used across all re-renders.
@@ -45,10 +46,23 @@ function App() {
     }
   };
 
+  // Inside your App component
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    console.log("time: ", time);
+  }, [time, setTime]);
+
   // Render the App component
   return (
     <div className="App">
       <header className="App-header">
+        <h1>Custom Time Picker</h1>
+        <TimePicker value={time} onChange={setTime} />
+        <input className="inline" type="text" />
+        <input className="inline" type="date" />
+        <input className="inline" type="time" />
+        <hr />
         <h1>S3 File Download</h1>
         <button onClick={handleDownload} disabled={downloadProgress !== 0}>
           Download File

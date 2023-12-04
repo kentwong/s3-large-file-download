@@ -35,3 +35,69 @@
 .progress-bar {
   margin: 0 10px;
 }
+
+.App {
+  padding: 20px;
+}
+
+.inline {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.time-picker-container {
+  position: relative;
+}
+
+.time-picker-dropdown-container {
+  position: absolute;
+  z-index: 1;
+  background: white;
+  border: 1px solid #aeaeae;
+  border-radius: 0.3rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  width: 240px;
+  top: calc(100% + 10px); /* Add 10px of space */
+  left: 0; /* Align it to the left of the input field */
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.time-picker-dropdown-container::before {
+  content: '';
+  position: absolute;
+  top: -0.7rem;
+  left: 1rem;
+  border-width: 0 0.7rem 0.7rem 0.7rem;
+  border-color: transparent transparent #aeaeae transparent;
+}
+
+.time-picker-dropdown-container::after {
+  content: '';
+  position: absolute;
+  top: -0.6rem;
+  left: 1rem;
+  border-width: 0 0.7rem 0.7rem 0.7rem;
+  border-color: transparent transparent white transparent;
+}
+
+.time-picker-dropdown-container div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 70px; /* Limit the width of the columns */
+}
+
+.time-picker-dropdown-container select {
+  margin-top: 0.5rem;
+  /* max-width: 60px; Limit the width of the select elements */
+  width: 100%;
+}
+
+.time-picker-dropdown-container label {
+  font-size: 0.8rem;
+  color: #555;
+}
